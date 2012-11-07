@@ -1,4 +1,4 @@
-A simple wrapper for the [Nexmo](http://nexmo.com/) API
+A simple wrapper for the [Nexmo](http://nexmo.com/) API [![Build Status](https://travis-ci.org/Virtualmaster/nexmo.png?branch=master)](https://travis-ci.org/Virtualmaster/nexmo)
 =======================================================
 
 

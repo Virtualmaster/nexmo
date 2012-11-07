@@ -1,7 +1,7 @@
 require 'minitest/autorun'
 require 'mocha'
 
-require_relative '../lib/nexmo'
+require File.join(File.dirname(__FILE__), '../lib/nexmo')
 
 describe Nexmo::Client do
   before do
@@ -23,26 +23,32 @@ describe Nexmo::Client do
 
   describe 'send_message method' do
     it 'posts to the sms resource' do
-      http_response = stub(code: '200', body: '{"messages":[{"status":0,"message-id":"id"}]}')
+      http_response = stub(:code => '200', :body => '{"messages":[{"status":0,"message-id":"id"}]}')
       http_response.expects(:[]).with('Content-Type').returns('application/json;charset=utf-8')
 
-      data = 'from=ruby&to=number&text=Hey%21&username=key&password=secret'
+      # this sucks, we have to alter expectattion becasue ruby 1.9.x implemented ordered hash
+      # see: http://www.igvita.com/2009/02/04/ruby-19-internals-ordered-hash/
+      if not (RUBY_VERSION =~ /^1.8/).nil?
+        data = 'username=key&password=secret&from=ruby&to=number&text=Hey!'
+      else
+        data = 'from=ruby&to=number&text=Hey%21&username=key&password=secret'
+      end
 
       headers = {'Content-Type' => 'application/x-www-form-urlencoded'}
 
       @client.http.expects(:post).with('/sms/json', data, headers).returns(http_response)
 
-      @client.send_message({from: 'ruby', to: 'number', text: 'Hey!'})
+      @client.send_message({:from => 'ruby', :to => 'number', :text => 'Hey!'})
     end
 
     describe 'when the first message status equals 0' do
       it 'returns a success object' do
-        http_response = stub(code: '200', body: '{"messages":[{"status":0,"message-id":"id"}]}')
+        http_response = stub(:code => '200', :body => '{"messages":[{"status":0,"message-id":"id"}]}')
         http_response.expects(:[]).with('Content-Type').returns('application/json;charset=utf-8')
 
         @client.http.stubs(:post).returns(http_response)
 
-        response = @client.send_message({from: 'ruby', to: 'number', text: 'Hey!'})
+        response = @client.send_message({:from => 'ruby', :to => 'number', :text => 'Hey!'})
         response.success?.must_equal(true)
         response.failure?.must_equal(false)
         response.message_id.must_equal('id')
@@ -51,12 +57,12 @@ describe Nexmo::Client do
 
     describe 'when the first message status does not equal 0' do
       it 'returns a failure object' do
-        http_response = stub(code: '200', body: '{"messages":[{"status":2,"error-text":"Missing from param"}]}')
+        http_response = stub(:code => '200', :body => '{"messages":[{"status":2,"error-text":"Missing from param"}]}')
         http_response.expects(:[]).with('Content-Type').returns('application/json')
 
         @client.http.stubs(:post).returns(http_response)
 
-        response = @client.send_message({to: 'number', text: 'Hey!'})
+        response = @client.send_message({:to => 'number', :text => 'Hey!'})
 
         response.success?.must_equal(false)
         response.failure?.must_equal(true)
@@ -67,9 +73,9 @@ describe Nexmo::Client do
 
     describe 'when the server returns an unexpected http response' do
       it 'returns a failure object' do
-        @client.http.stubs(:post).returns(stub(code: '503'))
+        @client.http.stubs(:post).returns(stub(:code => '503'))
 
-        response = @client.send_message({from: 'ruby', to: 'number', text: 'Hey!'})
+        response = @client.send_message({:from => 'ruby', :to => 'number', :text => 'Hey!'})
 
         response.success?.must_equal(false)
         response.failure?.must_equal(true)
@@ -105,9 +111,16 @@ describe Nexmo::Client do
 
   describe 'get_account_numbers method' do
     it 'fetches the account numbers resource with the given parameters and returns a response object' do
-      @client.http.expects(:get).with('/account/numbers/key/secret?size=25&pattern=33').returns(stub)
-
-      @client.get_account_numbers(size: 25, pattern: 33).must_be_instance_of(Nexmo::Response)
+      
+      # this sucks, we have to alter expectattion becasue ruby 1.9.x implemented ordered hash
+      # see: http://www.igvita.com/2009/02/04/ruby-19-internals-ordered-hash/
+      if not (RUBY_VERSION =~ /^1.8/).nil?
+        @client.http.expects(:get).with('/account/numbers/key/secret?pattern=33&size=25').returns(stub)
+      else
+        @client.http.expects(:get).with('/account/numbers/key/secret?size=25&pattern=33').returns(stub)
+      end
+      
+      @client.get_account_numbers(:size => 25, :pattern =>33).must_be_instance_of(Nexmo::Response)
     end
   end
 
@@ -115,7 +128,7 @@ describe Nexmo::Client do
     it 'fetches the number search resource for the given country with the given parameters and returns a response object' do
       @client.http.expects(:get).with('/number/search/key/secret/CA?size=25').returns(stub)
 
-      @client.number_search(:CA, size: 25).must_be_instance_of(Nexmo::Response)
+      @client.number_search(:CA, :size => 25).must_be_instance_of(Nexmo::Response)
     end
   end
 
@@ -131,7 +144,7 @@ describe Nexmo::Client do
     it 'fetches the message rejections resource with the given parameters and returns a response object' do
       @client.http.expects(:get).with('/search/rejections/key/secret?date=YYYY-MM-DD').returns(stub)
 
-      @client.get_message_rejections(date: 'YYYY-MM-DD').must_be_instance_of(Nexmo::Response)
+      @client.get_message_rejections(:date => 'YYYY-MM-DD').must_be_instance_of(Nexmo::Response)
     end
   end
 
@@ -139,7 +152,7 @@ describe Nexmo::Client do
     it 'fetches the search messages resource with the given parameters and returns a response object' do
       @client.http.expects(:get).with('/search/messages/key/secret?date=YYYY-MM-DD&to=1234567890').returns(stub)
 
-      @client.search_messages(date: 'YYYY-MM-DD', to: 1234567890).must_be_instance_of(Nexmo::Response)
+      @client.search_messages(:date => 'YYYY-MM-DD', :to => 1234567890).must_be_instance_of(Nexmo::Response)
     end
 
     it 'should encode a non hash argument as a list of ids' do
@@ -204,7 +217,7 @@ describe Nexmo::Object do
   before do
     @value = 'xxx'
 
-    @object = Nexmo::Object.new(message_id: @value)
+    @object = Nexmo::Object.new(:message_id => @value)
   end
 
   it 'provides method access for attributes passed to the constructor' do
@@ -231,7 +244,7 @@ describe Nexmo::Object do
 
   describe 'to_hash method' do
     it 'returns a hash containing the object attributes' do
-      @object.to_hash.must_equal({message_id: @value})
+      @object.to_hash.must_equal({:message_id => @value})
     end
   end
 end

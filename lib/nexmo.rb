@@ -5,6 +5,9 @@ Bundler.require
 require 'net/http'
 require 'net/https'
 require 'uri'
+if not (RUBY_VERSION =~ /^1.8/).nil?
+  require File.join(File.dirname(__FILE__),'uri-extension.rb')
+end
 
 module Nexmo
   class Client
@@ -71,13 +74,14 @@ module Nexmo
     end
 
     def search_messages(params)
-      get("/search/messages/#{key}/#{secret}", Hash === params ? params : {ids: Array(params)})
+      get("/search/messages/#{key}/#{secret}", Hash === params ? params : {:ids => Array(params)})
     end
 
     private
 
     def get(path, params = {})
-      Response.new(@http.get(params.empty? ? path : "#{path}?#{URI.encode_www_form(params)}"))
+      encoded_params =  URI.encode_www_form(params)
+      Response.new(@http.get(params.empty? ? path : "#{path}?#{encoded_params}"))
     end
 
     def ok?(response)
@@ -85,11 +89,12 @@ module Nexmo
     end
 
     def json?(response)
-      response['Content-Type'].split(?;).first == 'application/json'
+      response['Content-Type'].split(';').first == 'application/json'
     end
 
     def encode(data)
-      URI.encode_www_form data.merge(:username => @key, :password => @secret)
+      params = data.merge(:username => @key, :password => @secret)
+      URI.encode_www_form(params)
     end
   end
 
@@ -107,11 +112,11 @@ module Nexmo
     end
 
     def json?
-      self['Content-Type'].split(?;).first == 'application/json'
+      self['Content-Type'].split(';').first == 'application/json'
     end
 
     def object
-      JSON.parse(body, object_class: Object)
+      JSON.parse(body, :object_class => Object)
     end
   end
 
@@ -125,7 +130,7 @@ module Nexmo
     end
 
     def []=(name, value)
-      @attributes[name.to_s.tr(?-, ?_).to_sym] = value
+      @attributes[name.to_s.tr('-', '_').to_sym] = value
     end
 
     def to_hash

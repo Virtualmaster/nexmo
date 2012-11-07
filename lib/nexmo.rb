@@ -94,7 +94,10 @@ module Nexmo
 
     def encode(data)
       params = data.merge(:username => @key, :password => @secret)
-      URI.encode_www_form(params)
+      strkeys = {}
+      params.each{|k,v| strkeys[k.to_s] = v} 
+      # sort keys to avoid ordered hash issues in test expecations
+      strkeys.keys.sort.map{|k| URI.encode_www_form(k => strkeys[k])}.join('&')
     end
   end
 

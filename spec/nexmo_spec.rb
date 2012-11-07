@@ -26,13 +26,7 @@ describe Nexmo::Client do
       http_response = stub(:code => '200', :body => '{"messages":[{"status":0,"message-id":"id"}]}')
       http_response.expects(:[]).with('Content-Type').returns('application/json;charset=utf-8')
 
-      # this sucks, we have to alter expectattion becasue ruby 1.9.x implemented ordered hash
-      # see: http://www.igvita.com/2009/02/04/ruby-19-internals-ordered-hash/
-      if not (RUBY_VERSION =~ /^1.8/).nil?
-        data = 'username=key&password=secret&from=ruby&to=number&text=Hey!'
-      else
-        data = 'from=ruby&to=number&text=Hey%21&username=key&password=secret'
-      end
+      data = 'from=ruby&password=secret&text=Hey!&to=number&username=key'
 
       headers = {'Content-Type' => 'application/x-www-form-urlencoded'}
 
@@ -112,13 +106,7 @@ describe Nexmo::Client do
   describe 'get_account_numbers method' do
     it 'fetches the account numbers resource with the given parameters and returns a response object' do
       
-      # this sucks, we have to alter expectattion becasue ruby 1.9.x implemented ordered hash
-      # see: http://www.igvita.com/2009/02/04/ruby-19-internals-ordered-hash/
-      if not (RUBY_VERSION =~ /^1.8/).nil?
-        @client.http.expects(:get).with('/account/numbers/key/secret?pattern=33&size=25').returns(stub)
-      else
-        @client.http.expects(:get).with('/account/numbers/key/secret?size=25&pattern=33').returns(stub)
-      end
+      @client.http.expects(:get).with('/account/numbers/key/secret?pattern=33&size=25').returns(stub)
       
       @client.get_account_numbers(:size => 25, :pattern =>33).must_be_instance_of(Nexmo::Response)
     end

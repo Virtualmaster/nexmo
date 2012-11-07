@@ -1,6 +1,9 @@
+require 'rubygems'
+require 'bundler/setup'
+Bundler.require
+
 require 'net/http'
 require 'net/https'
-require 'json'
 require 'uri'
 
 module Nexmo
